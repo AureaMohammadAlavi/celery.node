@@ -1,18 +1,20 @@
 import * as url from "url";
 import RedisBroker from "./redis";
 import AMQPBroker from "./amqp";
+import RedisSentinelBroker from "./redis-sentinel";
+import { Message } from "../message";
 
 export interface CeleryBroker {
-  isReady: () => Promise<any>;
-  disconnect: () => Promise<any>;
-  publish: (
-    body: object | [Array<any>, object, object],
-    exchange: string,
-    routingKey: string,
-    headers: object,
-    properties: object
-  ) => Promise<any>;
-  subscribe: (queue: string, callback: Function) => Promise<any>;
+    isReady: () => Promise<any>;
+    disconnect: () => Promise<any>;
+    publish: (
+        body: object | [Array<any>, object, object],
+        exchange: string,
+        routingKey: string,
+        headers: object,
+        properties: object
+    ) => Promise<any>;
+    subscribe: (queue: string, callback: (message: Message) => any) => Promise<any>;
 }
 
 /**
@@ -20,7 +22,7 @@ export interface CeleryBroker {
  * @private
  * @constant
  */
-const supportedProtocols = ["redis", "rediss", "amqp", "amqps"];
+const supportedProtocols = ["redis", "rediss", "sentinel", "amqp", "amqps"];
 
 /**
  * takes url string and after parsing scheme of url, returns protocol.
@@ -53,6 +55,10 @@ export function newCeleryBroker(
   const brokerProtocol = getProtocol(CELERY_BROKER);
   if (['redis', 'rediss'].indexOf(brokerProtocol) > -1) {
     return new RedisBroker(CELERY_BROKER, CELERY_BROKER_OPTIONS);
+  }
+
+  if (['redis-sentinel'].indexOf(brokerProtocol) > -1) {
+      return new RedisSentinelBroker(CELERY_BROKER, CELERY_BROKER_OPTIONS);
   }
 
   if (['amqp', 'amqps'].indexOf(brokerProtocol) > -1) {

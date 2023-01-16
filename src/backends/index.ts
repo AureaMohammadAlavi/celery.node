@@ -1,6 +1,7 @@
 import * as url from "url";
 import RedisBackend from "./redis";
 import AMQPBackend from "./amqp";
+import RedisSentinelBackend from "./redis-sentinel";
 
 export interface CeleryBackend {
   isReady: () => Promise<any>;
@@ -45,6 +46,10 @@ export function newCeleryBackend(
   const brokerProtocol = getProtocol(CELERY_BACKEND);
   if (['redis', 'rediss'].indexOf(brokerProtocol) > -1) {
     return new RedisBackend(CELERY_BACKEND, CELERY_BACKEND_OPTIONS);
+  }
+
+  if (['redis-sentinel'].indexOf(brokerProtocol) > -1) {
+      return new RedisSentinelBackend(CELERY_BACKEND, CELERY_BACKEND_OPTIONS);
   }
 
   if (['amqp', 'amqps'].indexOf(brokerProtocol) > -1) {
